@@ -1,0 +1,12 @@
+{
+  "ansible.python.interpreterPath": "/root/ansible/venv/bin/python",
+  "files.associations": {
+    "**/*.yml": "ansible"
+  },
+  "python-envs.pythonProjects": [],
+  "cSpell.words": [
+    "patroni",
+    "pgbackrest",
+    "pgbouncer"
+  ]
+}

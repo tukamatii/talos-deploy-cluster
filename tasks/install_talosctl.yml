@@ -1,0 +1,7 @@
+---
+- name: Скачать talosctl
+  get_url:
+    url: "{{ talosctl_url }}"
+    dest: "{{ talosctl_dest }}"
+    mode: "0755"
+    force: true

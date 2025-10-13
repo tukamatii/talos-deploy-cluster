@@ -1,0 +1,31 @@
+---
+# defaults file for talos-deploy-vm
+
+# vcenter default vars
+s1_vcenter_hostname: "vcenter-01.infra.corp"
+s1_vcenter_datacenter: "Datacenter"
+s1_vcenter_validate_certs: false
+
+s1_vcenter_username: "svc-ansible-vcenter"
+s1_vcenter_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  38373232313735646165353266626335393837356632643462386464396230373963616133666139
+  6464363432336666363961363965623139343233376638340a646234633533383934623535616235
+  65313437386561613631653830366130393837626662303166616661656266613066356233643837
+  3139636532663466300a646331623033343338623761393062306665616661383435313434303562
+  3337
+
+# vcenter vms template configs
+s1_vms_cluster: "Cluster vSAN-BackUP"
+s1_vms_name: "test_vm_multi_disks"
+s1_vms_resource_pool: "rp-a.baran"
+s1_vms_state: "present"
+
+s1_vms_hardware:
+  memory_mb: 8192
+  num_cpus: 4
+  scsi: "paravirtual"
+
+talosctl_version: "1.11.2"
+talosctl_url: "https://github.com/siderolabs/talos/releases/download/v{{ talosctl_version }}/talosctl-linux-amd64"
+talosctl_dest: "/usr/local/bin/talosctl"

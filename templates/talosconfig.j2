@@ -1,0 +1,12 @@
+# Файл: talosconfig.j2
+# Это Jinja2 шаблон для генерации файла talosconfig.
+context: {{ talos_cluster_name }}
+contexts:
+  {{ talos_cluster_name }}:
+    endpoints: []
+    ca: |
+      {{ talos_secrets.certs.os.crt | indent(6) }}
+    crt: |
+      {{ talos_client.crt | indent(6) }}
+    key: |
+      {{ talos_client.key | indent(6) }}

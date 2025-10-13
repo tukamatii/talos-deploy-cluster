@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Ansibug: Launch Current File",
+            "type": "ansible",
+            "request": "launch",
+            "playbook": "${workspaceFolder}/playbooks/test.yml",
+            "cwd": "${cwd}",
+            "args": [
+                "-i", "inventory",
+                "-e", "target=psql-main-cl"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "ANSIBLE_VAULT_PASSWORD_FILE": "../ansible.pass",
+            }
+        }
+        
+        
+        
+        
+    ]
+}

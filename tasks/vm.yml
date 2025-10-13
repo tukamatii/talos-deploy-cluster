@@ -1,0 +1,68 @@
+- name: create folder for a group
+  vmware.vmware.folder:
+    hostname: "{{ s1_vcenter_hostname }}"
+    username: "{{ s1_vcenter_username }}"
+    password: "{{ s1_vcenter_password }}"
+    validate_certs: "{{ s1_vcenter_validate_certs }}"
+    datacenter: "{{ s1_vcenter_datacenter }}"
+    relative_path: "{{s1_vcenter_parent_folder}}/{{ target }}"
+    folder_type: vm
+    state: present
+  run_once: true
+  when:
+    - groups[target] is defined
+
+- name: set folder for a group
+  ansible.builtin.set_fact:
+    s1_vcenter_folder_final: "{{s1_vcenter_parent_folder}}/{{target}}"
+  when:
+    - groups[target] is defined
+
+- name: create VM
+  community.vmware.vmware_guest:
+    hostname: "{{ s1_vcenter_hostname }}"
+    username: "{{ s1_vcenter_username }}"
+    password: "{{ s1_vcenter_password }}"
+    validate_certs: "{{ s1_vcenter_validate_certs }}"
+    datacenter: "{{s1_vcenter_datacenter}}"
+    cluster: "{{s1_vms_cluster}}"
+    folder: "{{s1_vcenter_folder_final}}"
+    disk: "{{s1_vms_disk}}"
+    hardware: "{{s1_vms_hardware}}"
+    networks:
+      - connected: true
+        device_type: "vmxnet3"
+        start_connected: true
+        name: "{{s1_vm_network_name}}"
+    resource_pool: "{{s1_vms_resource_pool}}"
+    state: "{{s1_vms_state}}"
+    template: "{{s1_vms_template}}"
+    name: "{{inventory_hostname}}"
+    vapp_properties:
+      - id: talos.config
+        value: "{{ lookup('template', 'controlplane.yaml.j2') | b64encode }}"
+        type: string
+  register: s1_create_VM
+  async: 3600
+  poll: 0
+
+- name: Wait for creation to finish
+  ansible.builtin.async_status:
+    jid: "{{ s1_create_VM.ansible_job_id }}"
+  delay: 5
+  retries: 60
+  register: s1_vm_creation_jobs
+  until: s1_vm_creation_jobs.finished
+
+- name: get vm state
+  ansible.builtin.set_fact:
+    s1_vm_id: "{{s1_vm_creation_jobs.instance.moid}}"
+
+- name: Power on the VM
+  vmware.vmware_rest.vcenter_vm_power:
+    vcenter_hostname: "{{ s1_vcenter_hostname }}"
+    vcenter_username: "{{ s1_vcenter_username }}"
+    vcenter_password: "{{ s1_vcenter_password }}"
+    vcenter_validate_certs: "{{ s1_vcenter_validate_certs }}"
+    state: start
+    vm: "{{ s1_vm_id }}"

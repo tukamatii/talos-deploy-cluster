@@ -1,0 +1,15 @@
+---
+# tasks file for talos-deploy-vm
+
+- name: install talosctl
+  ansible.builtin.import_tasks:
+    file: install_talosctl.yml
+
+- name: create vm
+  ansible.builtin.import_tasks:
+    file: vm.yml
+
+- name: Customize VM
+  ansible.builtin.import_tasks:
+    file: customize_ubuntu.yml
+  when: s1_vm_state == "poweredOff"

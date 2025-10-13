@@ -1,0 +1,28 @@
+---
+galaxy_info:
+  role_name: talos_deploy_vm
+  author: OIT Team
+  description: Deploys Talos Linux VMs on VMware vCenter with embedded Talos configuration via vApp properties.
+  company: OIT
+  license: BSD
+  min_ansible_version: "2.12"
+  platforms:
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+  galaxy_tags:
+    - talos
+    - kubernetes
+    - vmware
+    - vcenter
+    - infrastructure
+    - provisioning
+    - devops
+    - security
+
+dependencies: []
