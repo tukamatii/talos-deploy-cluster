@@ -1,0 +1,21 @@
+---
+talos-cluster-test:
+  hosts:
+    talos-test-01:
+      s1_ip_addr: "10.10.61.61/24"
+    talos-test-02:
+      s1_ip_addr: "10.10.61.62/24"
+    talos-test-03:
+      s1_ip_addr: "10.10.61.63/24"
+  vars:
+    s1_vcenter_parent_folder: "rp-INFRA/rp-OIT-for-Employee/rp-a.baran/TEST"
+    s1_vm_network_name: pg-vlan61-Baran
+    s1_vms_template: "talos_01"
+    s1_vms_disk:
+      - datastore: "stvm-vSanDadastore-Backup"
+        size_gb: 50
+        type: "thin"
+    s1_vms_hardware:
+      memory_mb: 32768
+      num_cpus: 16
+      scsi: "paravirtual"

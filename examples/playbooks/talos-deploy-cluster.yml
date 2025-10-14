@@ -1,0 +1,8 @@
+---
+# runs with: ANSIBLE_VAULT_PASSWORD_FILE=../ansible.pass ansible-playbook -i inventory/ playbooks/talos-deploy-cluster.yml -e target=talos-cluster-test
+- hosts: "{{target}}"
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+  roles:
+    - role: talos_deploy_vm
