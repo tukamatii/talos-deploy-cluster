@@ -17,9 +17,29 @@ machine:
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
   network:
-{{ talos_machine_network | to_nice_yaml(indent=2) }}
-{{ talos_machine_additional_config | to_nice_yaml(indent=2) }}
-
+    hostname: {{inventory_hostname }} 
+    interfaces:
+      - deviceSelector:
+          physical: true
+        dhcp: false
+        addresses:
+          - "{{s1_ip_addr}}"
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.10.61.2
+            metric: 10
+        vip:
+          ip: "{{talos_interface_vip}}"
+    nameservers:
+      - "10.10.7.3"
+      - "10.10.10.3"
+    searchDomains:
+      - okbtsp.local
+      - okbtsp.com
+      - okbtsp.corp
+{% if talos_machine_additional_config is defined and talos_machine_additional_config | length > 0 %}
+  {{ talos_machine_additional_config | to_nice_yaml(indent=2) | indent(2) | trim }}
+{% endif %}
   install:
     disk: /dev/sda
     image: ghcr.io/siderolabs/installer:v1.11.2
@@ -44,7 +64,7 @@ cluster:
     endpoint: "{{ talos_controlplane_endpoint }}"
   clusterName: "{{ talos_cluster_name }}"
   network:
-{{ talos_cluster_network | to_nice_yaml(indent=4) }}
+    {{ talos_cluster_network | to_nice_yaml(indent=2) | indent(4) | trim }}
   proxy:
     disabled: true
   token: "{{ talos_secrets.secrets.bootstraptoken }}"
@@ -105,4 +125,6 @@ cluster:
         {{ talos_secrets.certs.etcd.crt | indent(6) }}
       key: |
         {{ talos_secrets.certs.etcd.key | indent(6) }}
-{{ talos_cluster_additional_config | to_nice_yaml(indent=2) }}
+{% if talos_cluster_additional_config is defined and talos_cluster_additional_config | length > 0 %}
+  {{ talos_cluster_additional_config | to_nice_yaml(indent=2) | indent(2) | trim }}
+{% endif %}

@@ -3,7 +3,10 @@
 context: {{ talos_cluster_name }}
 contexts:
   {{ talos_cluster_name }}:
-    endpoints: []
+    endpoints:
+{% for host in groups[target] %}
+      - "{{ hostvars[host].s1_ip_addr.split('/')[0] }}:50000"
+{% endfor %}
     ca: |
       {{ talos_secrets.certs.os.crt | indent(6) }}
     crt: |

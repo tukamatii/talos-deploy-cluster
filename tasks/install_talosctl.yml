@@ -1,7 +1,14 @@
 ---
-- name: Скачать talosctl
+- name: Install talosctl
   get_url:
     url: "{{ talosctl_url }}"
     dest: "{{ talosctl_dest }}"
     mode: "0755"
     force: true
+
+- name: render talos config template and save locally
+  ansible.builtin.copy:
+    content: "{{ lookup('template', 'talosconfig.j2') }}"
+    dest: "{{talos_config_folder}}{{ target }}.yaml"
+  delegate_to: localhost
+  run_once: true

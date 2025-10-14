@@ -1,0 +1,35 @@
+- name: Check if etcd is already bootstrapped
+  ansible.builtin.shell:
+    cmd:
+      "talosctl get etcdMembers -n {{ hostvars[groups[target][0]].s1_ip_addr.split('/')[0] }} -o json \
+      --talosconfig {{talos_config_folder}}{{ target }}.yaml "
+  register: etcd_check
+  changed_when: false
+  delegate_to: localhost
+  run_once: true
+
+- name: Bootstrap etcd if not initialized
+  ansible.builtin.shell:
+    cmd:
+      "talosctl bootstrap -n {{ hostvars[groups[target][0]].s1_ip_addr.split('/')[0] }} \
+      --talosconfig {{talos_config_folder}}{{ target }}.yaml "
+  when:
+    - etcd_check.rc == 0
+    - etcd_check.stdout | trim == ""
+  delegate_to: localhost
+  run_once: true
+
+- name: Delete old kubeconfig
+  ansible.builtin.file:
+    path: "{{kube_config_folder}}{{ target }}.yaml"
+    state: absent
+  delegate_to: localhost
+  run_once: true
+
+- name: Download Kubeconfig
+  ansible.builtin.shell:
+    cmd:
+      "talosctl kubeconfig -n {{ hostvars[groups[target][0]].s1_ip_addr.split('/')[0] }} \
+      --talosconfig {{talos_config_folder}}{{ target }}.yaml {{kube_config_folder}}{{ target }}.yaml -f"
+  delegate_to: localhost
+  run_once: true

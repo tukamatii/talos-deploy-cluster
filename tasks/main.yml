@@ -1,15 +1,21 @@
 ---
-# tasks file for talos-deploy-vm
+# # tasks file for talos-deploy-vm
 
 - name: install talosctl
   ansible.builtin.import_tasks:
     file: install_talosctl.yml
+  delegate_to: localhost
+  run_once: true
 
 - name: create vm
   ansible.builtin.import_tasks:
     file: vm.yml
 
-- name: Customize VM
+- name: Reset Vapp
   ansible.builtin.import_tasks:
-    file: customize_ubuntu.yml
+    file: reset_vapp.yml
   when: s1_vm_state == "poweredOff"
+
+- name: Initialize talos OS
+  ansible.builtin.import_tasks:
+    file: init_talos.yml

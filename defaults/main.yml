@@ -15,6 +15,13 @@ s1_vcenter_password: !vault |
   3139636532663466300a646331623033343338623761393062306665616661383435313434303562
   3337
 
+s1_vm_network_config:
+  - connected: true
+    start_connected: true
+    device_type: vmxnet3
+    name: "{{s1_vm_network_name}}"
+    type: dhcp
+
 # vcenter vms template configs
 s1_vms_cluster: "Cluster vSAN-BackUP"
 s1_vms_name: "test_vm_multi_disks"
@@ -29,3 +36,6 @@ s1_vms_hardware:
 talosctl_version: "1.11.2"
 talosctl_url: "https://github.com/siderolabs/talos/releases/download/v{{ talosctl_version }}/talosctl-linux-amd64"
 talosctl_dest: "/usr/local/bin/talosctl"
+
+talos_config_folder: ~/.talos/
+kube_config_folder: ~/.kube/

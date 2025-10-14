@@ -1,0 +1,55 @@
+- name: Power on the VM
+  vmware.vmware_rest.vcenter_vm_power:
+    vcenter_hostname: "{{ s1_vcenter_hostname }}"
+    vcenter_username: "{{ s1_vcenter_username }}"
+    vcenter_password: "{{ s1_vcenter_password }}"
+    vcenter_validate_certs: "{{ s1_vcenter_validate_certs }}"
+    state: start
+    vm: "{{ s1_vm_id }}"
+
+- name: Wait until my VMware tools are recognized
+  vmware.vmware_rest.vcenter_vm_tools_info:
+    vcenter_hostname: "{{ s1_vcenter_hostname }}"
+    vcenter_username: "{{ s1_vcenter_username }}"
+    vcenter_password: "{{ s1_vcenter_password }}"
+    vcenter_validate_certs: "{{ s1_vcenter_validate_certs }}"
+    vm: "{{ s1_vm_id }}"
+  register: s1_vm_tools_info
+  until:
+    - s1_vm_tools_info is not failed
+    - s1_vm_tools_info.value.run_state == "RUNNING"
+  retries: 60
+  delay: 5
+
+- name: Wait 5 more minutes
+  ansible.builtin.pause:
+    minutes: 5
+
+- name: Restart guest os
+  vmware.vmware.vm_powerstate:
+    hostname: "{{ s1_vcenter_hostname }}"
+    username: "{{ s1_vcenter_username }}"
+    password: "{{ s1_vcenter_password }}"
+    validate_certs: "{{ s1_vcenter_validate_certs }}"
+    datacenter: "{{s1_vcenter_datacenter}}"
+    folder: "{{s1_vcenter_folder_final}}"
+    state: "reboot-guest"
+    name: "{{inventory_hostname}}"
+  async: 3600
+  poll: 0
+
+- name: Wait for VM to be powered on
+  vmware.vmware_rest.vcenter_vm_power_info:
+    vcenter_hostname: "{{ s1_vcenter_hostname }}"
+    vcenter_username: "{{ s1_vcenter_username }}"
+    vcenter_password: "{{ s1_vcenter_password }}"
+    vcenter_validate_certs: "{{ s1_vcenter_validate_certs }}"
+    vm: "{{ s1_vm_id }}"
+  register: s1_vm_status
+  until: (s1_vm_status.value.state is defined) and (s1_vm_status.value.state == "POWERED_ON")
+  retries: 60
+  delay: 5
+
+- name: Wait one more minute
+  ansible.builtin.pause:
+    minutes: 1
