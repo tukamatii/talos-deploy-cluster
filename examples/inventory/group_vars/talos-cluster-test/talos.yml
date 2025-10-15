@@ -3,7 +3,7 @@ talos_cluster_name: "talos-cluster-test"
 talos_interface_vip: "10.10.61.50"
 talos_controlplane_endpoint: "https://10.10.61.50:6443"
 
-talos_machine_additional_config:
+talos_cp_machine_additional_config:
   registries:
     mirrors:
       docker.io:
@@ -35,7 +35,7 @@ talos_cluster_network:
   serviceSubnets:
     - 10.240.0.0/13
 
-talos_cluster_additional_config:
+talos_cp_cluster_additional_config:
   inlineManifests:
     - name: cilium
       contents: |

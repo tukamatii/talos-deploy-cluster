@@ -16,6 +16,8 @@ machine:
     image: ghcr.io/siderolabs/kubelet:v1.34.1
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
+    extraArgs:
+      max-pods: "1000"
   network:
     hostname: {{inventory_hostname }} 
     interfaces:
@@ -37,8 +39,8 @@ machine:
       - okbtsp.local
       - okbtsp.com
       - okbtsp.corp
-{% if talos_machine_additional_config is defined and talos_machine_additional_config | length > 0 %}
-  {{ talos_machine_additional_config | to_nice_yaml(indent=2) | indent(2) | trim }}
+{% if talos_cp_machine_additional_config is defined and talos_cp_machine_additional_config | length > 0 %}
+  {{ talos_cp_machine_additional_config | to_nice_yaml(indent=2) | indent(2) | trim }}
 {% endif %}
   install:
     disk: /dev/sda
@@ -125,6 +127,6 @@ cluster:
         {{ talos_secrets.certs.etcd.crt | indent(6) }}
       key: |
         {{ talos_secrets.certs.etcd.key | indent(6) }}
-{% if talos_cluster_additional_config is defined and talos_cluster_additional_config | length > 0 %}
-  {{ talos_cluster_additional_config | to_nice_yaml(indent=2) | indent(2) | trim }}
+{% if talos_cp_cluster_additional_config is defined and talos_cp_cluster_additional_config | length > 0 %}
+  {{ talos_cp_cluster_additional_config | to_nice_yaml(indent=2) | indent(2) | trim }}
 {% endif %}

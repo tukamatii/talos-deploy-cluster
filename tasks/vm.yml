@@ -27,8 +27,8 @@
 
 - name: Debug — render template and save locally
   ansible.builtin.copy:
-    content: "{{ lookup('template', 'controlplane.yaml.j2') | b64encode }}"
-    dest: "/tmp/{{ inventory_hostname }}b64.yaml"
+    content: "{{ lookup('template', 'worker.yaml.j2')  }}"
+    dest: "/tmp/{{ inventory_hostname }}_worker.yaml"
   delegate_to: localhost
   run_once: true
 
@@ -49,7 +49,7 @@
     name: "{{inventory_hostname}}"
     vapp_properties:
       - id: talos.config
-        value: "{{ (lookup('template', 'controlplane.yaml.j2') | b64encode).replace('\n', '') }}"
+        value: "{{ (lookup('template', talos_node_type ~ '.yaml.j2') | b64encode).replace('\n', '') }}"
         type: string
   register: s1_create_VM
   async: 3600

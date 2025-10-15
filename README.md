@@ -53,7 +53,7 @@ talos_controlplane_endpoint: "https://10.10.1.5:6443"
 # ... (Переменные vCenter см. в разделе Defaults) ...
 
 # --- Дополнительные настройки Talos Cluster (опционально) ---
-talos_machine_additional_config:
+talos_cp_machine_additional_config:
   registries:
     mirrors:
       docker.io:
@@ -72,7 +72,7 @@ talos_cluster_network:
     - 10.224.0.0/13
   serviceSubnets:
     - 10.240.0.0/13
-# ... (и другие talos_cluster_additional_config)
+# ... (и другие talos_cp_cluster_additional_config)
 ```
 
 ### 3\. Обработка Секретов (Vault)
@@ -142,28 +142,28 @@ ansible-vault encrypt group_vars/talos-cluster-test_secrets.yml
 | **`s1_vcenter_datacenter`**     | Defaults/Group Vars   | `"Datacenter"`                              | Имя датацентра.                                                                        |
 | **`s1_vcenter_validate_certs`** | Defaults/Group Vars   | `true`                                      | Проверка сертификатов vCenter.                                                         |
 | **`s1_vcenter_parent_folder`**  | Group Vars            | **Нет**                                     | Родительская папка для создания VM-группы (например, `/VMs/Talos`).                    |
-| **`s1_vms_cluster`**            | Defaults/Group Vars   | `"Cluster"`                     | Имя кластера vSphere для размещения VM.                                                |
-| **`s1_vms_resource_pool`**      | Defaults/Group Vars   | `"rp-vms"`                              | Имя пула ресурсов.                                                                     |
+| **`s1_vms_cluster`**            | Defaults/Group Vars   | `"Cluster"`                                 | Имя кластера vSphere для размещения VM.                                                |
+| **`s1_vms_resource_pool`**      | Defaults/Group Vars   | `"rp-vms"`                                  | Имя пула ресурсов.                                                                     |
 | **`s1_vms_state`**              | Defaults/Group Vars   | `"present"`                                 | Желаемое состояние VM (`present` - создать).                                           |
 | **`s1_vms_template`**           | Group Vars            | **Нет**                                     | **Обязательно.** Имя шаблона VM (с установленным Talos OS).                            |
 | **`s1_vms_hardware`**           | Defaults/Group Vars   | `(8GB RAM, 4 vCPU)`                         | Параметры железа VM.                                                                   |
 | **`s1_vm_network_config`**      | Defaults/Group Vars   | `(vmxnet3, dhcp, name: s1_vm_network_name)` | Конфигурация сетевых адаптеров VM.                                                     |
 | **`s1_vm_network_name`**        | Group Vars            | **Нет**                                     | **Обязательно.** Имя vCenter-сети для подключения VM.                                  |
-| **`s1_ip_addr`**                | Host Vars             | **Нет**                                     | **Обязательно для хоста.** IP-адрес с маской (`10.10.1.6/24`).                       |
+| **`s1_ip_addr`**                | Host Vars             | **Нет**                                     | **Обязательно для хоста.** IP-адрес с маской (`10.10.1.6/24`).                         |
 | **`target`**                    | Group Vars/Extra Vars | **Нет**                                     | **Обязательно.** Имя группы хостов (используется для папки в vCenter и имен конфигов). |
 
 ### 2\. Переменные конфигурации Talos Cluster (Group Vars)
 
-| Переменная                            | Где указать              | Стандартное значение                   | Описание                                                        |
-| :------------------------------------ | :----------------------- | :------------------------------------- | :-------------------------------------------------------------- |
-| **`talos_cluster_name`**              | Group Vars               | `"talos-cluster-test"`                 | Имя кластера (используется для имени контекста).                |
-| **`talos_interface_vip`**             | Group Vars               | `"10.10.1.5"`                          | Виртуальный IP-адрес для Control Plane.                         |
-| **`talos_controlplane_endpoint`**     | Group Vars               | `"https://10.10.1.5:6443"`             | API-эндпоинт кластера.                                          |
-| **`talos_secrets`**                   | Vault (Секреты)          | **Зашифровано**                        | Секреты кластера, сгенерированные `talosctl gen secrets`.       |
-| **`talos_client`**                    | Vault (Секреты)          | **Зашифровано**                        | Секреты клиента, извлеченные из `talosctl gen config`.          |
-| **`talos_machine_additional_config`** | Group Vars (Опционально) | `(Пример: registries, time servers)`   | Дополнительные настройки секции `machine` в конфигурации Talos. |
-| **`talos_cluster_network`**           | Group Vars               | `(Пример: podSubnets, serviceSubnets)` | Сетевые настройки кластера (CNI, подсети).                      |
-| **`talos_cluster_additional_config`** | Group Vars (Опционально) | `(Пример: inlineManifests для Cilium)` | Дополнительные настройки секции `cluster` в конфигурации Talos. |
+| Переменная                               | Где указать              | Стандартное значение                   | Описание                                                        |
+| :--------------------------------------- | :----------------------- | :------------------------------------- | :-------------------------------------------------------------- |
+| **`talos_cluster_name`**                 | Group Vars               | `"talos-cluster-test"`                 | Имя кластера (используется для имени контекста).                |
+| **`talos_interface_vip`**                | Group Vars               | `"10.10.1.5"`                          | Виртуальный IP-адрес для Control Plane.                         |
+| **`talos_controlplane_endpoint`**        | Group Vars               | `"https://10.10.1.5:6443"`             | API-эндпоинт кластера.                                          |
+| **`talos_secrets`**                      | Vault (Секреты)          | **Зашифровано**                        | Секреты кластера, сгенерированные `talosctl gen secrets`.       |
+| **`talos_client`**                       | Vault (Секреты)          | **Зашифровано**                        | Секреты клиента, извлеченные из `talosctl gen config`.          |
+| **`talos_cp_machine_additional_config`** | Group Vars (Опционально) | `(Пример: registries, time servers)`   | Дополнительные настройки секции `machine` в конфигурации Talos. |
+| **`talos_cluster_network`**              | Group Vars               | `(Пример: podSubnets, serviceSubnets)` | Сетевые настройки кластера (CNI, подсети).                      |
+| **`talos_cp_cluster_additional_config`** | Group Vars (Опционально) | `(Пример: inlineManifests для Cilium)` | Дополнительные настройки секции `cluster` в конфигурации Talos. |
 
 ### 3\. Переменные Talosctl и пути к конфигам
 

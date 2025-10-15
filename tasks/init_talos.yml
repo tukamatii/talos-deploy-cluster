@@ -1,3 +1,16 @@
+---
+- name: Apply trusted roots config
+  ansible.builtin.shell:
+    cmd:
+      "talosctl patch machineconfig -n {{s1_ip_addr.split('/')[0] }} --patch @{{ role_path }}/files/trustedcerts.yaml \
+      --talosconfig {{talos_config_folder}}{{ target }}.yaml "
+  register: result
+  until: result.rc == 0
+  retries: 3
+  delay: 5
+  changed_when: false
+  delegate_to: localhost
+
 - name: Check if etcd is already bootstrapped
   ansible.builtin.shell:
     cmd:

@@ -1,0 +1,80 @@
+# Файл: worker.yaml.j2
+# Это Jinja2 шаблон для генерации конфигурации worker.
+version: v1alpha1
+debug: false
+persist: true
+machine:
+  type: worker
+  token: "{{ talos_secrets.trustdinfo.token }}"
+  ca:
+    crt: |
+      {{ talos_secrets.certs.os.crt | indent(6) }}
+    key: ""
+  certSANs: []
+  kubelet:
+    image: ghcr.io/siderolabs/kubelet:v1.34.1
+    defaultRuntimeSeccompProfileEnabled: true
+    disableManifestsDirectory: true
+    extraArgs:
+      max-pods: "1000"
+  network:
+    hostname: {{inventory_hostname }} 
+    interfaces:
+      - deviceSelector:
+          physical: true
+        dhcp: false
+        addresses:
+          - "{{s1_ip_addr}}"
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.10.61.2
+            metric: 10
+    nameservers:
+      - "10.10.7.3"
+      - "10.10.10.3"
+    searchDomains:
+      - okbtsp.local
+      - okbtsp.com
+      - okbtsp.corp
+{% if talos_wk_machine_additional_config is defined and talos_wk_machine_additional_config | length > 0 %}
+  {{ talos_wk_machine_additional_config | to_nice_yaml(indent=2) | indent(2) | trim }}
+{% endif %}
+  install:
+    disk: /dev/sda
+    image: ghcr.io/siderolabs/installer:v1.11.2
+    wipe: false
+  features:
+    rbac: true
+    stableHostname: true
+    apidCheckExtKeyUsage: true
+    diskQuotaSupport: true
+    kubePrism:
+      enabled: true
+      port: 7445
+    hostDNS:
+      enabled: true
+      forwardKubeDNSToHost: true
+
+cluster:
+  id: "{{ talos_secrets.cluster.id }}"
+  secret: "{{ talos_secrets.cluster.secret }}"
+  controlPlane:
+    endpoint: "{{ talos_controlplane_endpoint }}"
+  clusterName: "{{ talos_cluster_name }}"
+  network:
+    {{ talos_cluster_network | to_nice_yaml(indent=2) | indent(4) | trim }}
+  proxy:
+    disabled: true
+  token: "{{ talos_secrets.secrets.bootstraptoken }}"
+  secretboxEncryptionSecret: "{{ talos_secrets.secrets.secretboxencryptionsecret }}"
+  ca:
+    crt: |
+      {{ talos_secrets.certs.k8s.crt | indent(6) }}
+    key: ""
+  discovery:
+    enabled: true
+    registries:
+      kubernetes:
+        disabled: true
+      service: {}
+
