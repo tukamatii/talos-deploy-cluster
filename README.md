@@ -1,176 +1,199 @@
-Разумеется\! Вот готовый README на русском языке для вашей Ansible роли, основанный на предоставленных файлах.
-
 # 🚀 Ansible Роль: `talos-deploy-vm`
 
-Эта Ansible роль предназначена для **автоматизированного развертывания виртуальных машин Talos Linux Control Plane в среде VMware vSphere (с использованием vCenter)**, инициализации кластера и генерации необходимых конфигурационных файлов (`talosconfig` и `kubeconfig`).
-
-## 📋 Требования
-
-- **Ansible:** Версия 2.10 или выше.
-- **Коллекции Ansible:**
-  - `community.vmware`
-  - `vmware.vmware_rest`
-- **Утилиты на машине-контроллере (localhost):**
-  - **`talosctl`**: для инициализации кластера и получения `kubeconfig`. Роль сама скачивает и устанавливает его по умолчанию в `/usr/local/bin/`.
-- **vCenter/vSphere:** Доступные учетные данные и настроенный шаблон VM с Talos.
-- **Секреты:** Необходимые секреты кластера и клиента, сгенерированные `talosctl gen secrets` и `talosctl gen config`.
+Эта роль автоматизирует **полный жизненный цикл развертывания кластера Talos Linux в VMware vSphere**, включая создание виртуальных машин (как control plane, так и worker), инициализацию etcd, применение доверенных корневых сертификатов и генерацию клиентских конфигураций (`talosconfig` и `kubeconfig`).
 
 ---
 
-## 🛠️ Как использовать
+## 📋 Требования
 
-### 1\. Подготовка Инвентаря
+- **Ansible ≥ 2.10**
+- **Коллекции:**
+  - `community.vmware`
+  - `vmware.vmware_rest`
+- **Утилиты на контроллере:**
+  - Доступ к интернету для скачивания `talosctl` (или локальный бинарник)
+- **vSphere/vCenter:**
+  - Шаблон VM с предустановленным Talos OS
+  - Права на создание VM, управление папками и питанием
+- **Секреты:**
+  - Сгенерированные через `talosctl gen secrets` и `talosctl gen config`
+  - Зашифрованы с помощью **Ansible Vault**
 
-В вашем инвентаре определите группу (например, `talos-cluster-test`), которая будет соответствовать полю **`target`** в роли, и укажите уникальные переменные для каждого хоста.
+---
 
-**Пример `inventory.yml`:**
+## 🧩 Основные возможности
+
+✅ Поддержка **многонодовых кластеров** с разделением на **control plane** и **worker**  
+✅ Автоматическая установка `talosctl` нужной версии  
+✅ Динамическая генерация конфигурации Talos через Jinja2 (`controlplane.yaml.j2` / `worker.yaml.j2`)  
+✅ Применение **доверенных корневых сертификатов** после первого старта  
+✅ Инициализация etcd **только один раз** (идемпотентность)  
+✅ Генерация `talosconfig` с endpoint’ами **только для control plane узлов**  
+✅ Полная поддержка **Ansible Vault** для хранения секретов  
+✅ Создание изолированной папки в vCenter под кластер
+
+---
+
+## 🛠️ Использование
+
+### 1. Инвентарь с типами узлов
 
 ```yaml
+# inventory/talos-cluster-test.yml
 talos-cluster-test:
   hosts:
-    talos-test-01:
-      s1_ip_addr: "10.10.1.1/24" # IP-адрес для VM
-    talos-test-02:
-      s1_ip_addr: "10.10.1.2/24"
-    talos-test-03:
-      s1_ip_addr: "10.10.1.3/24"
+    cp-01:
+      s1_ip_addr: "10.10.1.11/24"
+      talos_node_type: controlplane
+    cp-02:
+      s1_ip_addr: "10.10.1.12/24"
+      talos_node_type: controlplane
+    wk-01:
+      s1_ip_addr: "10.10.1.21/24"
+      talos_node_type: worker
 ```
 
-### 2\. Определение Переменных Группы
+> ⚠️ Переменная `talos_node_type` обязательна и определяет, какой шаблон (`controlplane.yaml.j2` или `worker.yaml.j2`) будет использован.
 
-Определите переменные для группы хостов. Их можно разместить в файле `group_vars/<имя_группы>.yml`.
-
-**Пример `group_vars/talos-cluster-test.yml` (Не-секреты):**
+### 2. Групповые переменные
 
 ```yaml
-# --- Основные настройки кластера ---
-target: "talos-cluster-test" # Имя группы используется для создания папки в vCenter и имени конфигов
+# group_vars/talos-cluster-test/talos.yml
+target: "talos-cluster-test"
 talos_cluster_name: "talos-cluster-test"
-talos_interface_vip: "10.10.1.5"
-talos_controlplane_endpoint: "https://10.10.1.5:6443"
+talos_interface_vip: "10.10.1.10"
+talos_controlplane_endpoint: "https://10.10.1.10:6443"
 
-# --- Настройки для vCenter ---
-# ... (Переменные vCenter см. в разделе Defaults) ...
-
-# --- Дополнительные настройки Talos Cluster (опционально) ---
 talos_cp_machine_additional_config:
   registries:
     mirrors:
       docker.io:
-        endpoints:
-          - https://daocloud.io
-  time:
-    disabled: false
-    servers:
-      - 8.8.8.8
-      - 8.8.4.4
+        endpoints: ["https://daocloud.io"]
 
 talos_cluster_network:
-  cni:
-    name: none
-  podSubnets:
-    - 10.224.0.0/13
-  serviceSubnets:
-    - 10.240.0.0/13
-# ... (и другие talos_cp_cluster_additional_config)
+  cni: { name: none }
+  podSubnets: ["10.224.0.0/13"]
+  serviceSubnets: ["10.240.0.0/13"]
+
+# Настройки vCenter
+s1_vcenter_parent_folder: "/VMs/Talos"
+s1_vms_template: "talos-1.11-template"
+s1_vm_network_name: "vlan100"
+s1_vms_hardware:
+  memory_mb: 8192
+  num_cpus: 4
 ```
 
-### 3\. Обработка Секретов (Vault)
-
-**Секреты должны быть зашифрованы с помощью Ansible Vault.** В них входят:
-
-1.  **Секреты кластера (`talos_secrets`):** Данные из `secrets.yaml`, полученные после `talosctl gen secrets`.
-2.  **Сертификаты клиента (`talos_client`):** Данные из `talosconfig`, полученные после `talosctl gen config`.
-3.  **Учетные данные vCenter (`s1_vcenter_password`, `s1_vcenter_username`):** В примере пароль находится в `defaults/main.yml` и зашифрован.
-
-**Пример файла с секретами перед шифрованием (например, `group_vars/talos-cluster-test_secrets.yml`):**
+### 3. Секреты (в Vault)
 
 ```yaml
-# Файл: cluster_secrets.yml (для шифрования)
-# --- Секреты кластера (talosctl gen secrets) ---
-talos_secrets:
-  cluster:
-    id: "..."
-    secret: "..."
-  # ... остальные поля из secrets.yaml
-  certs:
-    etcd:
-      crt: "..."
-      key: "..."
-    # ... остальные certs
-
-# --- Секреты для talosconfig (talosctl gen config) ---
-talos_client:
-  crt: "..."
-  key: "..."
+# group_vars/talos-cluster-test/secrets.yml (зашифрован)
+talos_secrets: { ... } # из `talosctl gen secrets`
+talos_client: { ... } # из `talosctl gen config`
+s1_vcenter_username: "user@vsphere.local"
+s1_vcenter_password: "supersecret"
 ```
 
-**После создания файла зашифруйте его:**
+Зашифруйте:
 
 ```bash
-ansible-vault encrypt group_vars/talos-cluster-test_secrets.yml
+ansible-vault encrypt group_vars/talos-cluster-test/secrets.yml
 ```
 
-### 4\. Запуск Роли
-
-Используйте роль в вашем плейбуке, применив ее к вашей целевой группе:
+### 4. Запуск
 
 ```yaml
----
-- name: Deploy Talos Cluster
-  hosts: "{{target}}"
+# playbook.yml
+- name: Deploy Talos Cluster in vSphere
+  hosts: "{{ target }}"
   gather_facts: false
   roles:
     - talos-deploy-vm
 ```
 
+Запуск:
+
+```bash
+ansible-playbook playbook.yml -e target=talos-cluster-test --ask-vault-pass
+```
+
 ---
 
-## ⚙️ Переменные Роли
+## ⚙️ Ключевые переменные
 
-Переменные делятся на три категории: **vCenter/VM-Specific**, **Talos Cluster Configuration** и **Talosctl/Kubeconfig Paths**.
+### vSphere / VM
 
-### 1\. Переменные для vCenter/VM (Defaults)
+| Переменная           | Обязательная  | Описание                                                 |
+| -------------------- | ------------- | -------------------------------------------------------- |
+| `target`             | ✅            | Имя группы хостов (используется для папки и имен файлов) |
+| `s1_vms_template`    | ✅            | Имя шаблона Talos в vCenter                              |
+| `s1_vm_network_name` | ✅            | Имя сети vSphere                                         |
+| `s1_ip_addr`         | ✅ (на хосте) | IP с маской, например `10.10.1.11/24`                    |
+| `talos_node_type`    | ✅ (на хосте) | `controlplane` или `worker`                              |
 
-Эти переменные обычно устанавливаются в `defaults/main.yml` или переопределяются в `group_vars` или `host_vars`.
+### Talos
 
-| Переменная                      | Где указать           | Стандартное значение                        | Описание                                                                               |
-| :------------------------------ | :-------------------- | :------------------------------------------ | :------------------------------------------------------------------------------------- |
-| **`s1_vcenter_hostname`**       | Defaults/Group Vars   | `"vcenter.mydomain.com"`                    | Имя хоста vCenter.                                                                     |
-| **`s1_vcenter_username`**       | Group Vars/Vault      | `"myuser"`                                  | Имя пользователя vCenter.                                                              |
-| **`s1_vcenter_password`**       | Vault                 | **Зашифровано**                             | Пароль пользователя vCenter (должен быть в Vault).                                     |
-| **`s1_vcenter_datacenter`**     | Defaults/Group Vars   | `"Datacenter"`                              | Имя датацентра.                                                                        |
-| **`s1_vcenter_validate_certs`** | Defaults/Group Vars   | `true`                                      | Проверка сертификатов vCenter.                                                         |
-| **`s1_vcenter_parent_folder`**  | Group Vars            | **Нет**                                     | Родительская папка для создания VM-группы (например, `/VMs/Talos`).                    |
-| **`s1_vms_cluster`**            | Defaults/Group Vars   | `"Cluster"`                                 | Имя кластера vSphere для размещения VM.                                                |
-| **`s1_vms_resource_pool`**      | Defaults/Group Vars   | `"rp-vms"`                                  | Имя пула ресурсов.                                                                     |
-| **`s1_vms_state`**              | Defaults/Group Vars   | `"present"`                                 | Желаемое состояние VM (`present` - создать).                                           |
-| **`s1_vms_template`**           | Group Vars            | **Нет**                                     | **Обязательно.** Имя шаблона VM (с установленным Talos OS).                            |
-| **`s1_vms_hardware`**           | Defaults/Group Vars   | `(8GB RAM, 4 vCPU)`                         | Параметры железа VM.                                                                   |
-| **`s1_vm_network_config`**      | Defaults/Group Vars   | `(vmxnet3, dhcp, name: s1_vm_network_name)` | Конфигурация сетевых адаптеров VM.                                                     |
-| **`s1_vm_network_name`**        | Group Vars            | **Нет**                                     | **Обязательно.** Имя vCenter-сети для подключения VM.                                  |
-| **`s1_ip_addr`**                | Host Vars             | **Нет**                                     | **Обязательно для хоста.** IP-адрес с маской (`10.10.1.6/24`).                         |
-| **`target`**                    | Group Vars/Extra Vars | **Нет**                                     | **Обязательно.** Имя группы хостов (используется для папки в vCenter и имен конфигов). |
+| Переменная                           | Описание                                                              |
+| ------------------------------------ | --------------------------------------------------------------------- |
+| `talos_cp_machine_additional_config` | Доп. настройки **только для control plane** (registries, time и т.д.) |
+| `talos_wk_machine_additional_config` | Доп. настройки **для worker** (если нужны)                            |
+| `talos_cp_cluster_additional_config` | Inline-манифесты (например, Cilium) — применяются на control plane    |
+| `talos_cluster_network`              | Подсети pod/service, CNI                                              |
 
-### 2\. Переменные конфигурации Talos Cluster (Group Vars)
+### Пути и утилиты
 
-| Переменная                               | Где указать              | Стандартное значение                   | Описание                                                        |
-| :--------------------------------------- | :----------------------- | :------------------------------------- | :-------------------------------------------------------------- |
-| **`talos_cluster_name`**                 | Group Vars               | `"talos-cluster-test"`                 | Имя кластера (используется для имени контекста).                |
-| **`talos_interface_vip`**                | Group Vars               | `"10.10.1.5"`                          | Виртуальный IP-адрес для Control Plane.                         |
-| **`talos_controlplane_endpoint`**        | Group Vars               | `"https://10.10.1.5:6443"`             | API-эндпоинт кластера.                                          |
-| **`talos_secrets`**                      | Vault (Секреты)          | **Зашифровано**                        | Секреты кластера, сгенерированные `talosctl gen secrets`.       |
-| **`talos_client`**                       | Vault (Секреты)          | **Зашифровано**                        | Секреты клиента, извлеченные из `talosctl gen config`.          |
-| **`talos_cp_machine_additional_config`** | Group Vars (Опционально) | `(Пример: registries, time servers)`   | Дополнительные настройки секции `machine` в конфигурации Talos. |
-| **`talos_cluster_network`**              | Group Vars               | `(Пример: podSubnets, serviceSubnets)` | Сетевые настройки кластера (CNI, подсети).                      |
-| **`talos_cp_cluster_additional_config`** | Group Vars (Опционально) | `(Пример: inlineManifests для Cilium)` | Дополнительные настройки секции `cluster` в конфигурации Talos. |
+| Переменная            | Значение по умолчанию |
+| --------------------- | --------------------- |
+| `talosctl_version`    | `1.11.2`              |
+| `talos_config_folder` | `~/.talos/`           |
+| `kube_config_folder`  | `~/.kube/`            |
 
-### 3\. Переменные Talosctl и пути к конфигам
+---
 
-| Переменная                | Где указать | Стандартное значение        | Описание                                      |
-| :------------------------ | :---------- | :-------------------------- | :-------------------------------------------- |
-| **`talosctl_version`**    | Defaults    | `"1.11.2"`                  | Версия `talosctl` для скачивания.             |
-| **`talosctl_url`**        | Defaults    | _Сформированный URL_        | URL для скачивания бинарника `talosctl`.      |
-| **`talosctl_dest`**       | Defaults    | `"/usr/local/bin/talosctl"` | Путь для сохранения `talosctl`.               |
-| **`talos_config_folder`** | Defaults    | `~/.talos/`                 | Локальная папка для сохранения `talosconfig`. |
-| **`kube_config_folder`**  | Defaults    | `~/.kube/`                  | Локальная папка для сохранения `kubeconfig`.  |
+## 🔐 Файл доверенных сертификатов
+
+Роль применяет файл `files/trustedcerts.yaml` (в формате `TrustedRootsConfig`) к каждой ноде после создания:
+
+```yaml
+# files/trustedcerts.yaml
+apiVersion: v1alpha1
+kind: TrustedRootsConfig
+name: my-enterprise-ca
+certificates: |
+  -----BEGIN CERTIFICATE-----
+  MIIF... (ваш корневой CA)
+  -----END CERTIFICATE-----
+```
+
+> Этот шаг выполняется **до** инициализации etcd и позволяет Talos доверять внутренним репозиториям .
+
+---
+
+## 📁 Структура роли
+
+```
+talos-deploy-vm/
+├── defaults/main.yml          # Настройки vSphere по умолчанию
+├── tasks/
+│   ├── main.yml               # Основной workflow
+│   ├── install_talosctl.yml   # Установка talosctl
+│   ├── vm.yml                 # Создание и настройка VM
+│   ├── reset_vapp.yml         # Перезагрузка VM (если выключена)
+│   └── init_talos.yml         # Bootstrap, kubeconfig, trusted roots
+├── templates/
+│   ├── controlplane.yaml.j2
+│   ├── worker.yaml.j2
+│   └── talosconfig.j2
+├── files/
+│   └── trustedcerts.yaml      # Доверенный CA
+└── README.md
+```
+
+---
+
+## 💡 Примечания
+
+- Роль **идемпотентна**: повторный запуск не пересоздаст etcd или VM.
+- `talosconfig` содержит endpoint’ы **только control plane узлов**, что соответствует best practices.
+- Поддерживается **гибкая настройка сети**, времени, реестров и других параметров через `*_additional_config`.
+- Все операции с Talos (`bootstrap`, `kubeconfig`, `patch`) выполняются **локально** через `delegate_to: localhost`.
