@@ -1,0 +1,28 @@
+---
+- name: Ensure temporary directory for Git clones exists
+  ansible.builtin.file:
+    path: "{{ talos_addons_tmp_dir }}"
+    state: directory
+    mode: "0755"
+  delegate_facts: true
+  delegate_to: localhost
+
+- name: Clone each Git repository
+  ansible.builtin.git:
+    repo: "{{ item.url }}"
+    dest: "{{ talos_addons_tmp_dir }}/{{ item.url | basename | regex_replace('\\.git$', '') }}"
+    clone: yes
+    update: yes
+  loop: "{{ talos_addons_repositories }}"
+  loop_control:
+    label: "{{ item.url }}"
+  when: (talos_addons_clone | default(true)) | bool
+  delegate_facts: true
+  delegate_to: localhost
+
+- name: Process each cloned repository
+  ansible.builtin.include_tasks:
+    file: apply_talos_addon.yml
+  loop: "{{ talos_addons_repositories }}"
+  loop_control:
+    loop_var: repo_item

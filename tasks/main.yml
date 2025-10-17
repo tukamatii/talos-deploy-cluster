@@ -1,5 +1,5 @@
 ---
-# # tasks file for talos-deploy-vm
+# tasks file for talos-deploy-vm
 
 - name: install talosctl
   ansible.builtin.import_tasks:
@@ -19,3 +19,8 @@
 - name: Initialize talos OS
   ansible.builtin.import_tasks:
     file: init_talos.yml
+
+- name: talos addons init
+  ansible.builtin.import_tasks:
+    file: init_talos_addons.yml
+  run_once: true

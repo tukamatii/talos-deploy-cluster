@@ -1,0 +1,13 @@
+---
+- name: Apply Kubernetes manifest
+  kubernetes.core.k8s:
+    src: "{{ manifest.path }}"
+    kubeconfig: "{{ kube_config_folder }}{{ target }}.yaml"
+  register: apply_result
+  delegate_to: localhost
+
+- name: Pause between applies if changed (except after the last one)
+  ansible.builtin.pause:
+    seconds: 30
+  when: apply_result.changed and idx < (sorted_manifests | length - 1)
+  delegate_to: localhost

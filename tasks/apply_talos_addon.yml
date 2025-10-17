@@ -1,0 +1,83 @@
+---
+- name: "Include target-specific variables from ansible/{{ target }}.yml"
+  ansible.builtin.include_vars:
+    file: "{{ talos_addons_tmp_dir }}/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}/ansible/{{ target }}.yml"
+  when:
+    - repo_item.url is defined
+    - target is defined
+    - (repo_item.url | basename | regex_replace('\\.git$', '')) is defined
+
+- name: Ensure rendered manifests directory exists
+  ansible.builtin.file:
+    path: "{{ talos_addons_tmp_dir }}/rendered_k8s"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+
+- name: Clean up previous rendered manifests for this repo
+  ansible.builtin.file:
+    path: "{{ talos_addons_tmp_dir }}/rendered_k8s/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}"
+    state: absent
+  delegate_to: localhost
+
+- name: Create repo-specific rendered manifests subdirectory
+  ansible.builtin.file:
+    path: "{{ talos_addons_tmp_dir }}/rendered_k8s/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+
+- name: Render each manifest as template to static rendered directory
+  ansible.builtin.template:
+    src: "{{ manifest_item.src }}"
+    dest: "{{ talos_addons_tmp_dir }}/rendered_k8s/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}/{{ manifest_item.path | basename }}"
+    mode: "0644"
+  loop: "{{ query('filetree', talos_addons_tmp_dir + '/' + (repo_item.url | basename | regex_replace('\\.git$', '')) + '/' + (repo_item.k8s_manifests_dir | default('')) ) }}"
+  when:
+    - repo_item.k8s_manifests_dir is defined
+    - manifest_item.state == 'file'
+    - manifest_item.path is match(".*\\.(yaml|yml)$")
+  loop_control:
+    loop_var: manifest_item
+    label: "{{ manifest_item.path | basename }}"
+  delegate_to: localhost
+
+- name: Find rendered manifest files
+  ansible.builtin.find:
+    paths: "{{ talos_addons_tmp_dir }}/rendered_k8s/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}"
+    patterns: "*.yaml,*.yml"
+    file_type: file
+    recurse: yes
+  register: found_manifests
+  delegate_to: localhost
+
+- name: Prepare sorted list of manifests
+  ansible.builtin.set_fact:
+    sorted_manifests: |
+      {% set new_list = [] %}
+      {% for file in found_manifests.files %}
+      {% set _ = new_list.append(file | combine({'filename': file.path | basename})) %}
+      {% endfor %}
+      {{ new_list | sort(attribute='filename') }}
+
+- name: Apply rendered Kubernetes manifests with delay
+  include_tasks: apply_manifest.yml
+  loop: "{{ sorted_manifests }}"
+  loop_control:
+    loop_var: manifest
+    index_var: idx
+    label: "{{ manifest.filename }}"
+
+- name: Clean up rendered manifests directory
+  ansible.builtin.file:
+    path: "{{ talos_addons_tmp_dir }}/rendered_k8s/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}"
+    state: absent
+  when: (talos_addons_clone | default(true)) | bool
+  delegate_to: localhost
+
+- name: Run custom wait tasks from ansible/wait_tasks.yml
+  ansible.builtin.include_tasks:
+    file: "{{ talos_addons_tmp_dir }}/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}/ansible/wait_tasks.yml"
+  when:
+    - (repo_item.url | basename | regex_replace('\\.git$', '')) is defined
+    - (talos_addons_tmp_dir + '/' + (repo_item.url | basename | regex_replace('\\.git$', '')) + '/ansible/wait_tasks.yml') is exists

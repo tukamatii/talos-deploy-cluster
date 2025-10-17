@@ -17,20 +17,20 @@
     s1_vcenter_folder_final: "{{s1_vcenter_parent_folder}}/{{target}}"
   when:
     - groups[target] is defined
-
-- name: Debug — render template and save locally
-  ansible.builtin.copy:
-    content: "{{ lookup('template', 'controlplane.yaml.j2') }}"
-    dest: "/tmp/{{ inventory_hostname }}_controlplane_debug.yaml"
-  delegate_to: localhost
-  run_once: true
-
-- name: Debug — render template and save locally
-  ansible.builtin.copy:
-    content: "{{ lookup('template', 'worker.yaml.j2')  }}"
-    dest: "/tmp/{{ inventory_hostname }}_worker.yaml"
-  delegate_to: localhost
-  run_once: true
+#
+# - name: Debug — render template and save locally
+#   ansible.builtin.copy:
+#     content: "{{ lookup('template', 'controlplane.yaml.j2') }}"
+#     dest: "/tmp/{{ inventory_hostname }}_controlplane_debug.yaml"
+#   delegate_to: localhost
+#   run_once: true
+#
+# - name: Debug — render template and save locally
+#   ansible.builtin.copy:
+#     content: "{{ lookup('template', 'worker.yaml.j2')  }}"
+#     dest: "/tmp/{{ inventory_hostname }}_worker.yaml"
+#   delegate_to: localhost
+#   run_once: true
 
 - name: create VM
   community.vmware.vmware_guest:

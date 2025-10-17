@@ -31,6 +31,7 @@
     - etcd_check.stdout | trim == ""
   delegate_to: localhost
   run_once: true
+  register: talos_bootstrap
 
 - name: Delete old kubeconfig
   ansible.builtin.file:
@@ -46,3 +47,43 @@
       --talosconfig {{talos_config_folder}}{{ target }}.yaml {{kube_config_folder}}{{ target }}.yaml -f"
   delegate_to: localhost
   run_once: true
+
+- name: Wait 5 more minutes
+  ansible.builtin.pause:
+    minutes: 5
+  when: talos_bootstrap.changed
+
+- name: Wait for cilium-operator Deployment to be ready (with API fallback)
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: kube-system
+    name: cilium-operator
+    kubeconfig: "{{ kube_config_folder }}{{ target }}.yaml"
+  register: dep
+  until: >
+    dep is not failed and
+    dep.resources | length > 0 and
+    dep.resources[0].status.availableReplicas is defined and
+    dep.resources[0].status.availableReplicas >= (dep.resources[0].spec.replicas | default(1))
+  retries: 50
+  delay: 5
+  ignore_errors: yes
+  delegate_to: localhost
+  run_once: true
+  delegate_facts: true
+
+- name: Wait for all Kubernetes nodes to be Ready
+  kubernetes.core.k8s_info:
+    kind: Node
+    kubeconfig: "{{kube_config_folder}}{{ target }}.yaml"
+  register: nodes_status
+  until: >
+    nodes_status.resources | length > 0 and
+    nodes_status.resources | selectattr('status.conditions', 'defined') | list | length == nodes_status.resources | length and
+    (nodes_status.resources | selectattr('status.conditions', 'defined') | map(attribute='status.conditions') | map('selectattr', 'type', 'equalto', 'Ready') | map('selectattr', 'status', 'equalto', 'True') | flatten | length) == nodes_status.resources | length
+  retries: 50
+  delay: 5
+  delegate_to: localhost
+  run_once: true
+  delegate_facts: true
