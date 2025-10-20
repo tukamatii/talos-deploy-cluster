@@ -47,7 +47,7 @@
     paths: "{{ talos_addons_tmp_dir }}/rendered_k8s/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}"
     patterns: "*.yaml,*.yml"
     file_type: file
-    recurse: yes
+    recurse: true
   register: found_manifests
   delegate_to: localhost
 

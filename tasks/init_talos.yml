@@ -68,7 +68,7 @@
     dep.resources[0].status.availableReplicas >= (dep.resources[0].spec.replicas | default(1))
   retries: 50
   delay: 5
-  ignore_errors: yes
+  ignore_errors: true
   delegate_to: localhost
   run_once: true
   delegate_facts: true

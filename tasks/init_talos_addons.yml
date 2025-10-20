@@ -11,8 +11,8 @@
   ansible.builtin.git:
     repo: "{{ item.url }}"
     dest: "{{ talos_addons_tmp_dir }}/{{ item.url | basename | regex_replace('\\.git$', '') }}"
-    clone: yes
-    update: yes
+    clone: true
+    update: true
   loop: "{{ talos_addons_repositories }}"
   loop_control:
     label: "{{ item.url }}"
