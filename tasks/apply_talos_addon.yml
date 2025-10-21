@@ -7,6 +7,13 @@
     - target is defined
     - (repo_item.url | basename | regex_replace('\\.git$', '')) is defined
 
+- name: Run custom wait tasks from ansible/pre_tasks.yml
+  ansible.builtin.include_tasks:
+    file: "{{ talos_addons_tmp_dir }}/{{ repo_item.url | basename | regex_replace('\\.git$', '') }}/ansible/pre_tasks.yml"
+  when:
+    - (repo_item.url | basename | regex_replace('\\.git$', '')) is defined
+    - (talos_addons_tmp_dir + '/' + (repo_item.url | basename | regex_replace('\\.git$', '')) + '/ansible/pre_tasks.yml') is exists
+
 - name: Ensure rendered manifests directory exists
   ansible.builtin.file:
     path: "{{ talos_addons_tmp_dir }}/rendered_k8s"
