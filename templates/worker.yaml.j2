@@ -17,6 +17,7 @@ machine:
     disableManifestsDirectory: true
     extraArgs:
       max-pods: "1000"
+      cloud-provider: external
   network:
     hostname: {{inventory_hostname }} 
     interfaces:

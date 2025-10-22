@@ -51,6 +51,9 @@
       - id: talos.config
         value: "{{ (lookup('template', talos_node_type ~ '.yaml.j2') | b64encode).replace('\n', '') }}"
         type: string
+    advanced_settings:
+      - key: disk.EnableUUID
+        value: "TRUE"
   register: s1_create_VM
   async: 3600
   poll: 0
