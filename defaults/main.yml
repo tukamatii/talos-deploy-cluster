@@ -1,0 +1,60 @@
+---
+talosctl_dest: "/usr/local/bin/talosctl"
+
+talos_config_folder: ~/.talos/
+talos_config_file: "{{talos_config_folder}}{{ target }}.yaml"
+
+kube_config_folder: ~/.kube/
+kube_config_file: "{{kube_config_folder}}{{ target }}.yaml"
+kube_config_file_no_loadbalancer: "{{kube_config_folder}}{{ target }}-nolb.yaml"
+
+talos_cp_machine_additional_config:
+  registries:
+    mirrors:
+      docker.io:
+        endpoints:
+          - "https://mirror.gcr.io"
+          - "https://dockerhub.timeweb.cloud"
+          - "https://docker.mirrors.ustc.edu.cn"
+          - "https://mirror.baidubce.com"
+  time:
+    disabled: false
+    servers:
+      - 10.10.10.3
+      - 10.10.7.3
+
+talos_wk_machine_additional_config:
+  registries:
+    mirrors:
+      docker.io:
+        endpoints:
+          - "https://mirror.gcr.io"
+          - "https://dockerhub.timeweb.cloud"
+          - "https://docker.mirrors.ustc.edu.cn"
+          - "https://mirror.baidubce.com"
+  time:
+    disabled: false
+    servers:
+      - 10.10.10.3
+      - 10.10.7.3
+
+talos_cluster_network:
+  cni:
+    name: none
+  podSubnets:
+    - 10.224.0.0/13
+  serviceSubnets:
+    - 10.240.0.0/13
+
+##
+# Addons section
+##
+
+talos_addons_tmp_dir: /root/talos-addons
+
+talos_addons_clone: false
+#
+# talos_addons_repositories:
+# Пример элемента:
+# - url: https://github.com/myorg/app.git
+#   k8s_manifests_dir: k8s/manifests        # обязательно, если нужны манифесты

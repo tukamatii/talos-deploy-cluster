@@ -2,7 +2,7 @@
 - name: Apply Kubernetes manifest
   kubernetes.core.k8s:
     src: "{{ manifest.path }}"
-    kubeconfig: "{{ kube_config_folder }}{{ target }}.yaml"
+    kubeconfig: "{{kube_config_file_no_loadbalancer}}"
   register: apply_result
   delegate_to: localhost
 
