@@ -6,7 +6,6 @@ talos_config_file: "{{talos_config_folder}}{{ target }}.yaml"
 
 kube_config_folder: ~/.kube/
 kube_config_file: "{{kube_config_folder}}{{ target }}.yaml"
-kube_config_file_no_loadbalancer: "{{kube_config_folder}}{{ target }}-nolb.yaml"
 
 talos_cp_machine_additional_config:
   registries:

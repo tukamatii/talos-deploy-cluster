@@ -11,7 +11,10 @@ machine:
       {{ talos_secrets.certs.os.crt | indent(6) }}
     key: |
       {{ talos_secrets.certs.os.key | indent(6) }}
-  certSANs: []
+  certSANs:
+{% for san in talos_additional_cert_sans | default([]) %}
+    - {{ san }}
+{% endfor %}
   kubelet:
     image: ghcr.io/siderolabs/kubelet:v1.34.1
     defaultRuntimeSeccompProfileEnabled: true
