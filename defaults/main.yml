@@ -1,10 +1,10 @@
 ---
 talosctl_dest: "/usr/local/bin/talosctl"
 
-talos_config_folder: ~/.talos/
+talos_config_folder: /root/.talos/
 talos_config_file: "{{talos_config_folder}}{{ target }}.yaml"
 
-kube_config_folder: ~/.kube/
+kube_config_folder: /root/.kube/
 kube_config_file: "{{kube_config_folder}}{{ target }}.yaml"
 
 talos_cp_machine_additional_config:
@@ -12,10 +12,43 @@ talos_cp_machine_additional_config:
     mirrors:
       docker.io:
         endpoints:
-          - "https://mirror.gcr.io"
-          - "https://dockerhub.timeweb.cloud"
-          - "https://docker.mirrors.ustc.edu.cn"
-          - "https://mirror.baidubce.com"
+          - "https://zot.okbtsp.corp"
+      ghcr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      gcr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      k8s.gcr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      registry.k8s.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      quay.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      public.ecr.aws:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      mcr.microsoft.com:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      nvcr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      docker.elastic.co:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      registry.redhat.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      icr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      registry.gitlab.com:
+        endpoints:
+          - "https://zot.okbtsp.corp"
   time:
     disabled: false
     servers:
@@ -27,10 +60,43 @@ talos_wk_machine_additional_config:
     mirrors:
       docker.io:
         endpoints:
-          - "https://mirror.gcr.io"
-          - "https://dockerhub.timeweb.cloud"
-          - "https://docker.mirrors.ustc.edu.cn"
-          - "https://mirror.baidubce.com"
+          - "https://zot.okbtsp.corp"
+      ghcr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      gcr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      k8s.gcr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      registry.k8s.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      quay.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      public.ecr.aws:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      mcr.microsoft.com:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      nvcr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      docker.elastic.co:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      registry.redhat.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      icr.io:
+        endpoints:
+          - "https://zot.okbtsp.corp"
+      registry.gitlab.com:
+        endpoints:
+          - "https://zot.okbtsp.corp"
   time:
     disabled: false
     servers:

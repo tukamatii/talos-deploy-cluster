@@ -52,7 +52,6 @@ machine:
     hostDNS:
       enabled: true
       forwardKubeDNSToHost: true
-
 cluster:
   id: "{{ talos_secrets.cluster.id }}"
   secret: "{{ talos_secrets.cluster.secret }}"

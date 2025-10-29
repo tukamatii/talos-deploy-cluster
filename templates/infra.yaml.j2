@@ -26,13 +26,7 @@ machine:
     interfaces:
       - deviceSelector:
           physical: true
-        dhcp: false
-        addresses:
-          - "{{s1_ip_addr}}"
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 10.10.61.2
-            metric: 10
+        dhcp: true
     nameservers:
       - "10.10.7.3"
       - "10.10.10.3"
@@ -58,7 +52,6 @@ machine:
     hostDNS:
       enabled: true
       forwardKubeDNSToHost: true
-
 cluster:
   id: "{{ talos_secrets.cluster.id }}"
   secret: "{{ talos_secrets.cluster.secret }}"

@@ -1,15 +1,52 @@
 ---
-- name: Apply trusted roots config
+- name: Gather VM guest network info from vCenter
+  community.vmware.vmware_guest_info:
+    hostname: "{{ s1_vcenter_hostname }}"
+    username: "{{ s1_vcenter_username }}"
+    password: "{{ s1_vcenter_password }}"
+    validate_certs: "{{ s1_vcenter_validate_certs }}"
+    datacenter: "{{ s1_vcenter_datacenter }}"
+    name: "{{ inventory_hostname }}"
+  register: s1_vm_info
+  delegate_to: localhost
+  run_once: false
+
+# - name: DEBUG - Show guest network info from vCenter
+#   ansible.builtin.debug:
+#     msg: |
+#       VM: {{ inventory_hostname }}
+#       Guest net info: {{ s1_vm_info }}
+#       Extracted IPv4 candidates: {{
+#         (s1_vm_info.instance.guest.net | default([]) |
+#         map(attribute='ipAddress') | flatten |
+#         select('match', '^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$') |
+#         list)
+#       }}
+#   delegate_to: localhost
+#   run_once: false
+
+- name: Apply trusted roots config to Talos node via IPv4 from hw_eth0
   ansible.builtin.shell:
-    cmd:
-      "talosctl patch machineconfig -n {{s1_ip_addr.split('/')[0] }} --patch @{{ role_path }}/files/trustedcerts.yaml \
-      --talosconfig {{talos_config_file}}"
+    cmd: >
+      talosctl patch machineconfig -n {{ discovered_ipv4 }}
+      --patch @{{ role_path }}/files/trustedcerts.yaml
+      --talosconfig {{ talos_config_file }}
+  vars:
+    discovered_ipv4: >-
+      {{
+        (s1_vm_info.instance.hw_eth0.ipaddresses | default([]) |
+        select('match', '^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$') |
+        first) | default('')
+      }}
   register: result
   until: result.rc == 0
-  retries: 3
-  delay: 5
+  retries: 10
+  delay: 15
   changed_when: false
   delegate_to: localhost
+  when:
+    - discovered_ipv4 != ''
+    - discovered_ipv4 is defined
 
 - name: Check if etcd is already bootstrapped
   ansible.builtin.shell:
