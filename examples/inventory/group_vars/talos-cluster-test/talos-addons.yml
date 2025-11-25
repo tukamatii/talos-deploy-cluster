@@ -1,0 +1,14 @@
+# Пример элемента:
+# - url: https://github.com/myorg/app.git
+#   k8s_manifests_dir: k8s/manifests        # обязательно, если нужны манифесты
+#   ansible_vars_dir: ansible/vars          # опционально
+#   wait_tasks_dir: ansible/wait_tasks      # опционально
+talos_addons_repositories:
+  - url: ssh://git@gitlab.okbtsp.corp:2222/oit/k8s/talos-cilium.git
+    k8s_manifests_dir: manifests-to-apply
+  - url: ssh://git@gitlab.okbtsp.corp:2222/oit/k8s/talos-vmware-cpi.git
+    k8s_manifests_dir: manifests-to-apply
+  - url: ssh://git@gitlab.okbtsp.corp:2222/oit/k8s/talos-vmware-csi.git
+    k8s_manifests_dir: manifests-to-apply
+  - url: ssh://git@gitlab.okbtsp.corp:2222/oit/k8s/talos-infra-nodes.git
+    k8s_manifests_dir: manifests-to-apply

@@ -3,19 +3,33 @@ talos-cluster-test:
   hosts:
     talos-test-01:
       s1_ip_addr: "10.10.61.61/24"
+      talos_node_type: controlplane
     talos-test-02:
       s1_ip_addr: "10.10.61.62/24"
+      talos_node_type: controlplane
     talos-test-03:
       s1_ip_addr: "10.10.61.63/24"
+      talos_node_type: controlplane
+    talos-test-11:
+      talos_node_type: infra
+    talos-test-12:
+      talos_node_type: infra
+    talos-test-13:
+      talos_node_type: infra
+    talos-test-21:
+      talos_node_type: worker
+    talos-test-22:
+      talos_node_type: worker
+    talos-test-23:
+      talos_node_type: worker
   vars:
     s1_vcenter_parent_folder: "rp-INFRA/rp-OIT-for-Employee/rp-a.baran/TEST"
     s1_vm_network_name: pg-vlan61-Baran
     s1_vms_template: "talos_01"
     s1_vms_disk:
       - datastore: "stvm-vSanDadastore-Backup"
-        size_gb: 50
-        type: "thin"
+        size_gb: 30
     s1_vms_hardware:
-      memory_mb: 32768
-      num_cpus: 16
+      memory_mb: 16384
+      num_cpus: 8
       scsi: "paravirtual"

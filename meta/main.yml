@@ -4,7 +4,6 @@ galaxy_info:
   author: OIT Team
   description: Deploys Talos Linux VMs on VMware vCenter with embedded Talos configuration via vApp properties.
   company: OIT
-  license: BSD
   min_ansible_version: "2.12"
   platforms:
     - name: EL
